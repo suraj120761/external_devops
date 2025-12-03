@@ -47,6 +47,8 @@ http://localhost:5000
 
 
 
+
+
 Q) Deploy a Dockerized application on a Kubernetes cluster using kubectl commands. Create and 
 analyze the configuration files for Pods, Deployments, and Services, and explain how Kubernetes 
 manages container orchestration and scaling
@@ -116,3 +118,58 @@ minikube ip
 # http://<minikube-ip>:30007  e.g. http://192.168.49.2:30007
 
 
+
+
+
+Q) Set up a Puppet Master and Agent architecture in a Linux environment. Configure a pull-based setup 
+where the Puppet Agent retrieves configurations from the Master. Demonstrate configuration 
+updates and validate synchronization. 
+
+STEP 1 — Install Puppet Server & Puppet Agent 
+
+wget https://apt.puppet.com/puppet7-release-focal.deb 
+sudo dpkg -i puppet7-release-focal.deb 
+sudo apt update 
+sudo apt install puppetserver puppet-agent -y 
+
+STEP 2 — Start Puppet Server 
+
+Start puppetserver 
+sudo systemctl start puppetserver 
+sudo systemctl enable puppetserver 
+
+STEP 3 — Configure Puppet Agent to talk to Master 
+
+sudo nano /etc/puppetlabs/puppet/puppet.conf 
+Add this under [agent]: 
+server = puppet-local 
+certname = puppet-local 
+environment = production 
+
+STEP-4 Restart Puppet Agent service: 
+
+sudo systemctl restart puppet 
+sudo systemctl enable puppet 
+
+STEP 5 — Create a Manifest to Test Synchronization 
+Create the main manifest file: 
+sudo nano /etc/puppetlabs/code/environments/production/manifests/site.pp 
+
+Add: 
+
+node default { 
+file { '/tmp/myfile.txt': 
+ensure  => present, 
+content => "Hello from Puppet Master!", 
+} 
+} 
+
+
+STEP 6 — Pull Configuration from Master 
+Run agent: 
+sudo /opt/puppetlabs/bin/puppet agent --test 
+
+Check the file: 
+cat /tmp/myfile.txt 
+You should see: 
+Hello from Puppet Master!
