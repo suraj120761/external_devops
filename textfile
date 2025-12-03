@@ -173,3 +173,69 @@ Check the file:
 cat /tmp/myfile.txt 
 You should see: 
 Hello from Puppet Master!
+
+
+
+Q)Design and implement a Puppet configuration using Manifests, Modules, Classes, and Functions to 
+automate the installation of a software package (e.g., Apache or Nginx). Analyze how modularization 
+and reusability are achieved in Puppet configuration management. 
+
+Step 0: Clean old setup 
+rm -rf ~/puppet-demo 
+
+Step 1: Create module structure 
+mkdir -p ~/puppet-demo/modules/webserver/{manifests,lib/puppet/functions/webserver} 
+
+Step 2: Create class manifest 
+
+nano ~/puppet-demo/modules/webserver/manifests/init.pp
+class webserver {
+  package { 'apache2':
+    ensure => installed,
+  }
+
+  service { 'apache2':
+    ensure => running,
+    enable => true,
+  }
+
+  file { '/var/www/html/index.html':
+    ensure  => file,
+    content => "<h1>Hello from Puppet Webserver!</h1>",
+  }
+
+  # Call custom function (Puppet 8)
+  $message = webserver::greet()
+  notify { $message: }
+}
+
+
+Step 3: Create custom Puppet function
+nano ~/puppet-demo/modules/webserver/lib/puppet/functions/webserver/greet.rb
+Puppet::Functions.create_function(:'webserver::greet') do
+  def greet()
+    "Webserver setup done!"
+  end
+end
+
+Step 4: Create main manifest (site.pp)
+
+nano ~/puppet-demo/site.pp
+include webserver
+
+Step 5: Apply Puppet configuration 
+
+sudo /opt/puppetlabs/bin/puppet apply ~/puppet-demo/site.pp \ --modulepath=/home/suraj/puppet-demo/modules --debug 
+
+Expected output: 
+Notice: Webserver setup done! 
+
+Step 6: Verify Apache webserver 
+curl http://localhost 
+Output: 
+<h1>Hello from Puppet Webserver!</h1>
+
+
+
+
+
