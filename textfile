@@ -1,0 +1,118 @@
+Q) Develop a Dockerfile to build and deploy a simple web application (for example, a Python Flask or 
+Node.js app). Explain the purpose of each Dockerfile instruction (FROM, RUN, COPY, EXPOSE, CMD) 
+and verify the container creation using relevant Docker commands
+
+
+CODE: 
+
+Step 0: Prerequisites 
+Make sure you have Docker installed. Check with: 
+docker --version 
+
+Step 1: Create a project folder 
+mkdir flask_docker_lab 
+cd flask_docker_lab 
+
+Step 2: Create a simple Flask app 
+ app.py: 
+from flask import Flask 
+app = Flask(__name__) 
+@app.route("/") 
+def home(): 
+return "Hello from Docker!" 
+if __name__ == "__main__": 
+app.run(host="0.0.0.0", port=5000) 
+
+Step 3: Create requirements file 
+ requirements.txt: 
+flask 
+
+Step 4: Create Dockerfile 
+FROM python:3.9-slim 
+WORKDIR /app 
+COPY . /app 
+RUN pip install -r requirements.txt 
+EXPOSE 5000 
+CMD ["python", "app.py"] 
+
+Step 6: Build Docker Image 
+docker build -t flaskapp . 
+
+Step 7: Run Docker Container 
+docker run -d -p 5000:5000 flaskapp 
+
+Step 8: Verify Container 
+docker ps 
+http://localhost:5000 
+
+
+
+Q) Deploy a Dockerized application on a Kubernetes cluster using kubectl commands. Create and 
+analyze the configuration files for Pods, Deployments, and Services, and explain how Kubernetes 
+manages container orchestration and scaling
+
+0) Quick checks :
+
+minikube status 
+docker images 
+If docker images shows flaskapp:latest, continue. If not, build it: 
+# from your project folder with Dockerfile and app.py 
+docker build -t flaskapp:latest . 
+
+1) Make the image available to Minikube  
+minikube image load flaskapp:latest
+
+2) Create Deployment YAML (deployment.yaml) 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-deployment
+  labels:
+    app: flaskapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flaskapp
+  template:
+    metadata:
+      labels:
+        app: flaskapp
+    spec:
+      containers:
+      - name: flask-container
+        image: flaskapp:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+
+3) Create Service YAML (service.yaml)
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-service
+spec:
+  type: NodePort
+  selector:
+    app: flaskapp
+  ports:
+  - port: 5000
+    targetPort: 5000
+    nodePort: 30007
+
+4) Apply the manifests
+kubectl apply -f deployment.yaml 
+kubectl apply -f service.yaml
+
+5) Verify resources & health 
+kubectl get deployments 
+kubectl get pods -w 
+
+6) Access the app 
+Get the Minikube IP and open in browser: 
+minikube ip  
+# e.g. 192.168.49.2 
+# http://<minikube-ip>:30007  e.g. http://192.168.49.2:30007
+
+
